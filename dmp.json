@@ -19,7 +19,14 @@
     "dataset": [
       {
         "title": "Metabolic biomarker dataset — cohort wave 1–5",
-        "description": "Short desc.",
+        "description": "Longitudinal measurements of 48 plasma metabolic biomarkers collected across five annual waves from a cohort of 1,200 adults aged 40–75. Variables include lipid panels, glucose metabolism markers, inflammatory cytokines, and renal function indicators. Samples were processed at the IRyCIS central laboratory following ISO 15189 protocols. The dataset supports research into metabolic syndrome trajectories and age-related biomarker drift.",
+        "keyword": [
+          "metabolomics",
+          "longitudinal cohort",
+          "biomarkers",
+          "metabolic syndrome",
+          "plasma"
+        ],
         "personal_data": "unknown",
         "sensitive_data": "unknown",
         "dataset_id": {
@@ -33,7 +40,7 @@
             "data_access": "open",
             "license": [
               {
-                "license_ref": "https://example.com/custom-license",
+                "license_ref": "https://creativecommons.org/licenses/by/4.0/",
                 "start_date": "2026-01-10T00:00:00Z"
               }
             ]
