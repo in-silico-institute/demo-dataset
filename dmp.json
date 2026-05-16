@@ -1,0 +1,45 @@
+{
+  "dmp": {
+    "title": "Longitudinal cohort study of metabolic biomarkers",
+    "language": "eng",
+    "created": "2026-01-10T00:00:00Z",
+    "modified": "2026-01-10T00:00:00Z",
+    "dmp_id": {
+      "identifier": "https://github.com/in-silico-institute/demo-dataset",
+      "type": "other"
+    },
+    "contact": {
+      "name": "Garcia, Elena",
+      "mbox": "e.garcia@in-silico.example",
+      "contact_id": {
+        "identifier": "https://orcid.org/0000-0001-6752-9599",
+        "type": "orcid"
+      }
+    },
+    "dataset": [
+      {
+        "title": "Metabolic biomarker dataset — cohort wave 1–5",
+        "description": "Short desc.",
+        "personal_data": "unknown",
+        "sensitive_data": "unknown",
+        "dataset_id": {
+          "identifier": "metabolic-biomarker-cohort-wave1-5",
+          "type": "other"
+        },
+        "type": "dataset",
+        "distribution": [
+          {
+            "title": "Primary distribution",
+            "data_access": "open",
+            "license": [
+              {
+                "license_ref": "https://example.com/custom-license",
+                "start_date": "2026-01-10T00:00:00Z"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

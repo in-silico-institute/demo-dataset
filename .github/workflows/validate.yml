@@ -1,0 +1,12 @@
+on:
+  push:
+    branches: [main]
+    paths: ["dmp.json"]
+  pull_request:
+    paths: ["dmp.json"]
+
+jobs:
+  validate:
+    uses: in-silico-institute/.github/.github/workflows/fair-validate.yml@main
+    with:
+      dmp_path: dmp.json

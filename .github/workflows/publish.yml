@@ -1,0 +1,126 @@
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    name: Publish datasets to Zenodo
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install fair-publish
+        run: pip install git+https://github.com/in-silico-institute/fair-publish.git
+
+      - name: Fetch org-level policy
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/.github
+          path: _org_policy
+
+      - name: Publish datasets
+        env:
+          ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
+        run: |
+          fair-publish publish dmp.json \
+            --policy _org_policy/.github/policies/fair-policy.yml \
+            --sandbox \
+            --state zenodo_state.json \
+            --release-tag "${{ github.ref_name }}"
+
+      - name: Commit updated state file
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add zenodo_state.json
+          git diff --cached --quiet || \
+            git commit -m "chore: update zenodo_state.json after ${{ github.ref_name }}"
+          git push origin HEAD:main
+
+      - name: Summarise published records
+        id: summarise
+        if: success()
+        run: |
+          python3 - <<'EOF'
+          import json, os
+          with open("zenodo_state.json") as f:
+              state = json.load(f)
+          lines = []
+          for dataset_id, v in state.items():
+              rec = v["record_id"] if isinstance(v, dict) else v
+              pol = v.get("policy_version", "—") if isinstance(v, dict) else "—"
+              lines.append(
+                  f"  Dataset ID : {dataset_id}\n"
+                  f"  Record ID  : {rec}\n"
+                  f"  Policy ver : {pol}\n"
+                  f"  Draft URL  : https://sandbox.zenodo.org/deposit/{rec}"
+              )
+          records = "\n\n".join(lines) if lines else "  (no datasets found in state)"
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              delimiter = "RECORDS_DELIM"
+              fh.write(f"records<<{delimiter}\n{records}\n{delimiter}\n")
+          EOF
+
+      - name: Notify PI by email
+        if: success()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.MAIL_USER }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          to: ${{ secrets.MAIL_USER }}
+          from: ${{ secrets.MAIL_USER }}
+          subject: "[In-Silico Institute] Dataset draft published — ${{ github.ref_name }}"
+          body: |
+            In-Silico Institute — FAIR Metadata Pipeline
+            ─────────────────────────────────────────────
+
+            A Zenodo sandbox draft was successfully created for the following
+            release. Please review the record and click Publish on Zenodo
+            to register the DOI and make the dataset publicly accessible.
+
+            Repository : ${{ github.repository }}
+            Release tag: ${{ github.ref_name }}
+            Triggered by: ${{ github.actor }}
+
+            ─── Dataset records ──────────────────────────────────────────────
+            ${{ steps.summarise.outputs.records }}
+            ──────────────────────────────────────────────────────────────────
+
+            Review URL: https://sandbox.zenodo.org/me/uploads
+            State file: https://github.com/${{ github.repository }}/blob/main/zenodo_state.json
+
+            Policy version applied: see zenodo_state.json for per-dataset details.
+
+            This message was generated automatically by the In-Silico Institute
+            FAIR metadata CI/CD pipeline. Do not reply to this address.
+
+      - name: Write step summary
+        if: always()
+        run: |
+          echo "## Published to Zenodo (sandbox)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Release: \`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f zenodo_state.json ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Dataset ID | Zenodo record ID | Policy version |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|------------|-----------------|----------------|" >> "$GITHUB_STEP_SUMMARY"
+            python3 -c "
+          import json
+          with open('zenodo_state.json') as f:
+              state = json.load(f)
+          for k, v in state.items():
+              rec = v['record_id'] if isinstance(v, dict) else v
+              pol = v.get('policy_version', '—') if isinstance(v, dict) else '—'
+              print(f'| {k} | {rec} | {pol} |')
+          " >> "$GITHUB_STEP_SUMMARY"
+          fi
